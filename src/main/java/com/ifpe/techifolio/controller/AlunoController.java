@@ -1,25 +1,16 @@
 package com.ifpe.techifolio.controller;
 
-
 import java.util.List;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.ifpe.techifolio.entities.Aluno;
 import com.ifpe.techifolio.repository.AlunoRepository;
-
-
+import com.ifpe.techifolio.service.PasswordGenerator;
+import com.ifpe.techifolio.dto.ErrorResponse;
 
 @RestController
 @RequestMapping("/alunos")
@@ -31,12 +22,18 @@ public class AlunoController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createAluno(@RequestBody Aluno aluno) {
-        if (aluno.nullFieldAluno()) {
-            return ResponseEntity.badRequest().body("Campos obrigatórios não podem ser nulos");
+    public ResponseEntity<Object> createAluno(@RequestBody Aluno aluno) {
+        String nullFieldMessage = aluno.getNullFieldMessageAluno();
+        if (nullFieldMessage != null) {
+            ErrorResponse errorResponse = new ErrorResponse("Erro: " + nullFieldMessage, aluno);
+            return ResponseEntity.badRequest().body(errorResponse);
         }
-        repository.save(aluno);
-        return ResponseEntity.ok("Aluno criado com sucesso");
+        Aluno verificaEmail = repository.findByEmail(aluno.getEmail());
+        if (verificaEmail != null) {
+            return ResponseEntity.status(409).body(new ErrorResponse("Erro: Já existe um aluno cadastrado com o email informado.", aluno));
+        }
+        Aluno savedAluno = repository.save(aluno);
+        return ResponseEntity.status(201).body(savedAluno);
     }
 
     @GetMapping("/{id}")
@@ -51,11 +48,13 @@ public class AlunoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateAluno(@PathVariable ObjectId id, @RequestBody Aluno alunoDetails) {
+    public ResponseEntity<Object> updateAluno(@PathVariable ObjectId id, @RequestBody Aluno alunoDetails) {
         Optional<Aluno> aluno = repository.findById(id);
         if (aluno.isPresent()) {
-            if (alunoDetails.nullFieldAluno()) {
-                return ResponseEntity.badRequest().body("Campos obrigatórios não podem ser nulos");
+            String nullFieldMessage = alunoDetails.getNullFieldMessageAluno();
+            if (nullFieldMessage != null) {
+                ErrorResponse errorResponse = new ErrorResponse("Erro: " + nullFieldMessage, alunoDetails);
+                return ResponseEntity.badRequest().body(errorResponse);
             }
             Aluno updatedAluno = aluno.get();
             updatedAluno.setNome(alunoDetails.getNome());
@@ -63,7 +62,7 @@ public class AlunoController {
             updatedAluno.setSenha(alunoDetails.getSenha());
             updatedAluno.setFaculdade(alunoDetails.getFaculdade());
             repository.save(updatedAluno);
-            return ResponseEntity.ok("Aluno atualizado com sucesso");
+            return ResponseEntity.ok(updatedAluno);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -88,5 +87,20 @@ public class AlunoController {
         } else {
             return ResponseEntity.status(401).build();
         }
+    }
+
+    @PostMapping("/recuperar-senha")//implementar api para enviar a nova senha por email
+    public ResponseEntity<Object> recuperarSenha(@RequestParam String email) {
+        if(email == null || email.isEmpty()){
+            return ResponseEntity.status(400).body(new ErrorResponse("Erro: Email não pode ser nulo ou vazio.", null));
+        }
+        Aluno aluno = repository.findByEmail(email);
+        if (aluno == null) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Erro: Aluno não encontrado com o email informado.", null));
+        }
+        String novaSenha = PasswordGenerator.generateRandomPassword();
+        aluno.setSenha(novaSenha);
+        repository.save(aluno);
+        return ResponseEntity.ok(new ErrorResponse("Senha atualizada com sucesso. Nova senha: " + novaSenha, aluno));
     }
 }

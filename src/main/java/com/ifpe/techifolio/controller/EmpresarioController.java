@@ -5,18 +5,12 @@ import java.util.Optional;
 
 import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.ifpe.techifolio.entities.Empresario;
 import com.ifpe.techifolio.repository.EmpresarioRepository;
+import com.ifpe.techifolio.service.PasswordGenerator;
+import com.ifpe.techifolio.dto.ErrorResponse;
 
 @RestController
 @RequestMapping("/empresarios")
@@ -28,12 +22,18 @@ public class EmpresarioController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createEmpresario(@RequestBody Empresario empresario) {
-        if (empresario.nullFieldEmpresario()) {
-            return ResponseEntity.badRequest().body("Campos obrigatórios não podem ser nulos");
+    public ResponseEntity<Object> createEmpresario(@RequestBody Empresario empresario) {
+        String nullFieldMessage = empresario.getNullFieldMessageEmpresario();
+        if (nullFieldMessage != null) {
+            ErrorResponse errorResponse = new ErrorResponse("Erro: " + nullFieldMessage, empresario);
+            return ResponseEntity.badRequest().body(errorResponse);
         }
-        repository.save(empresario);
-        return ResponseEntity.ok("Empresário criado com sucesso");
+        Empresario verificaEmail = repository.findByEmail(empresario.getEmail());
+        if (verificaEmail != null) {
+            return ResponseEntity.status(409).body(new ErrorResponse("Erro: Já existe um empresário cadastrado com o email informado.", empresario));
+        }
+        Empresario savedEmpresario = repository.save(empresario);
+        return ResponseEntity.status(201).body(savedEmpresario);
     }
 
     @GetMapping("/{id}")
@@ -48,11 +48,13 @@ public class EmpresarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateEmpresario(@PathVariable ObjectId id, @RequestBody Empresario empresarioDetails) {
+    public ResponseEntity<Object> updateEmpresario(@PathVariable ObjectId id, @RequestBody Empresario empresarioDetails) {
         Optional<Empresario> empresario = repository.findById(id);
         if (empresario.isPresent()) {
-            if (empresarioDetails.nullFieldEmpresario()) {
-                return ResponseEntity.badRequest().body("Campos obrigatórios não podem ser nulos");
+            String nullFieldMessage = empresarioDetails.getNullFieldMessageEmpresario();
+            if (nullFieldMessage != null) {
+                ErrorResponse errorResponse = new ErrorResponse("Erro: " + nullFieldMessage, empresarioDetails);
+                return ResponseEntity.badRequest().body(errorResponse);
             }
             Empresario updatedEmpresario = empresario.get();
             updatedEmpresario.setNome(empresarioDetails.getNome());
@@ -60,7 +62,7 @@ public class EmpresarioController {
             updatedEmpresario.setSenha(empresarioDetails.getSenha());
             updatedEmpresario.setEmpresa(empresarioDetails.getEmpresa());
             repository.save(updatedEmpresario);
-            return ResponseEntity.ok("Empresário atualizado com sucesso");
+            return ResponseEntity.ok(updatedEmpresario);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -85,5 +87,20 @@ public class EmpresarioController {
         } else {
             return ResponseEntity.status(401).build();
         }
+    }
+
+    @PostMapping("/recuperar-senha")//implementar api de envio de email
+    public ResponseEntity<Object> recuperarSenha(@RequestParam String email) {
+        if(email == null || email.isEmpty()){
+            return ResponseEntity.status(400).body(new ErrorResponse("Erro: Email não pode ser nulo ou vazio.", null));
+        }
+        Empresario empresario = repository.findByEmail(email);
+        if (empresario == null) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Erro: Empresário não encontrado com o email informado.", null));
+        }
+        String novaSenha = PasswordGenerator.generateRandomPassword();
+        empresario.setSenha(novaSenha);
+        repository.save(empresario);
+        return ResponseEntity.ok(new ErrorResponse("Senha atualizada com sucesso. Nova senha: " + novaSenha, empresario));
     }
 }

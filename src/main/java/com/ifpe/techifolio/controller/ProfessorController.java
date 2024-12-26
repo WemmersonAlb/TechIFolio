@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ifpe.techifolio.entities.Professor;
 import com.ifpe.techifolio.repository.ProfessorRepository;
+import com.ifpe.techifolio.service.PasswordGenerator;
 import com.ifpe.techifolio.dto.ErrorResponse;
 
 @RestController
@@ -95,5 +96,20 @@ public class ProfessorController {
         } else {
             return ResponseEntity.status(401).build();
         }
+    }
+
+    @PostMapping("/recuperar-senha")//posteriormente implementar api para enviar por email
+    public ResponseEntity<Object> recuperarSenha(@RequestParam String email) {
+        if(email == null || email.isEmpty()){
+            return ResponseEntity.status(400).body(new ErrorResponse("Erro: Email não pode ser nulo ou vazio.", null));
+        }
+        Professor professor = repository.findByEmail(email);
+        if (professor == null) {
+            return ResponseEntity.status(404).body(new ErrorResponse("Erro: Professor não encontrado com o email informado.", null));
+        }
+        String novaSenha = PasswordGenerator.generateRandomPassword();
+        professor.setSenha(novaSenha);
+        repository.save(professor);
+        return ResponseEntity.ok(new ErrorResponse("Senha atualizada com sucesso. Nova senha: " + novaSenha, professor));
     }
 }

@@ -23,7 +23,29 @@ public class Aluno extends Pessoa{
     private ObjectId id;
     private String faculdade;
 
-    public boolean nullFieldAluno() {
-        return this.getNome() == null || this.getEmail() == null || this.getSenha() == null || this.getFaculdade() == null;
+    public Aluno(ObjectId id, String nome, String email, String senha, String faculdade) {
+        super(nome, email, senha);
+        this.id = id;
+        this.faculdade = faculdade;
+    }
+
+    public String getNullFieldMessageAluno() {
+        String returnText = "";
+        if (this.getNome() == null) {
+            returnText += "Nome não pode ser nulo. ";
+        }
+        if (this.getEmail() == null) {
+            returnText += "Email não pode ser nulo. ";
+        }
+        if (this.getSenha() == null) {
+            returnText += "Senha não pode ser nula. ";
+        }
+        if (this.getFaculdade() == null) {
+            returnText += "Faculdade não pode ser nula. ";
+        }
+        if (returnText.isEmpty()) {
+            return returnText;
+        }
+        return null;
     }
 }
