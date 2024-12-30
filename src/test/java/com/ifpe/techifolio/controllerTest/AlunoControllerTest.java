@@ -6,40 +6,32 @@ import static org.mockito.Mockito.when;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ifpe.techifolio.controller.AlunoController;
-import com.ifpe.techifolio.dto.ErrorResponse;
 import com.ifpe.techifolio.entities.Aluno;
 import com.ifpe.techifolio.repository.AlunoRepository;
 
 import org.springframework.http.MediaType;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Optional;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-
-@WebMvcTest(AlunoController.class)
-public class AlunoControllerTest {
+@ExtendWith(MockitoExtension.class)
+class AlunoControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
     @Mock
     private AlunoRepository alunoRepository;
-
     @InjectMocks
     private AlunoController alunoController;
 
@@ -51,10 +43,13 @@ public class AlunoControllerTest {
         MockitoAnnotations.openMocks(this);
         id = new ObjectId();
         aluno = new Aluno(id, "João", "joao@mail.com", "123456", "ABC");
+        mockMvc = MockMvcBuilders.standaloneSetup(alunoController)
+            .setControllerAdvice() 
+            .build();
     }
 
     @Test
-    public void testCreateAlunoSuccessTC013() throws Exception {
+    void testCreateAlunoSuccessTC013() throws Exception {
         when(alunoRepository.save(any(Aluno.class))).thenReturn(aluno);
 
         mockMvc.perform(post("/alunos")
@@ -68,7 +63,7 @@ public class AlunoControllerTest {
     }
 
     @Test
-    public void testCreateAlunoErrorDuplicateEmailTC014() throws Exception {
+    void testCreateAlunoErrorDuplicateEmailTC014() throws Exception {
         when(alunoRepository.findByEmail(aluno.getEmail())).thenReturn(aluno);
 
         mockMvc.perform(post("/alunos")
@@ -83,7 +78,7 @@ public class AlunoControllerTest {
     }
 
     @Test
-    public void testCreateAlunoErrorNullFieldNomeTC015() throws Exception {
+    void testCreateAlunoErrorNullFieldNomeTC015() throws Exception {
         Aluno invalidAluno = new Aluno(id, null, "joao@mail.com", "123456", "ABC");
         
         mockMvc.perform(post("/alunos")
@@ -95,7 +90,7 @@ public class AlunoControllerTest {
     }
 
     @Test
-    public void testCreateAlunoErrorNullFieldEmailTC016() throws Exception {
+    void testCreateAlunoErrorNullFieldEmailTC016() throws Exception {
         Aluno invalidAluno = new Aluno(id, "João", null, "123456", "ABC");
         
         mockMvc.perform(post("/alunos")
@@ -107,7 +102,7 @@ public class AlunoControllerTest {
     }
 
     @Test
-    public void testCreateAlunoErrorNullFieldPasswordTC017() throws Exception {
+    void testCreateAlunoErrorNullFieldPasswordTC017() throws Exception {
         Aluno invalidAluno = new Aluno(id, "João", "joao@mail.com", null, "ABC");
         
         mockMvc.perform(post("/alunos")
@@ -119,7 +114,7 @@ public class AlunoControllerTest {
     }
 
     @Test
-    public void testCreateAlunoErrorNullFieldFaculdadeTC018() throws Exception {
+    void testCreateAlunoErrorNullFieldFaculdadeTC018() throws Exception {
         Aluno invalidAluno = new Aluno(id, "João", "joao@mail.com", "123456", null);
         
         mockMvc.perform(post("/alunos")

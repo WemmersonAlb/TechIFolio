@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,11 +24,9 @@ import com.ifpe.techifolio.dto.ErrorResponse;
 @RestController
 @RequestMapping("/professores")
 public class ProfessorController {
-    private final ProfessorRepository repository;
+    @Autowired
+    private ProfessorRepository repository;
 
-    public ProfessorController(ProfessorRepository repository) {
-        this.repository = repository;
-    }
 
     @PostMapping
     public ResponseEntity<Object> createProfessor(@RequestBody Professor professor) {

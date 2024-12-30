@@ -6,13 +6,14 @@ import static org.mockito.Mockito.when;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ifpe.techifolio.controller.EmpresarioController;
@@ -21,18 +22,12 @@ import com.ifpe.techifolio.repository.EmpresarioRepository;
 
 import org.springframework.http.MediaType;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Optional;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-
-@WebMvcTest(EmpresarioController.class)
-public class EmpresarioControllerTest {
+@ExtendWith(MockitoExtension.class)
+class EmpresarioControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
@@ -50,10 +45,13 @@ public class EmpresarioControllerTest {
         MockitoAnnotations.openMocks(this);
         id = new ObjectId();
         empresario = new Empresario(id, "João", "joao@mail.com", "123456", "Empresa ABC");
+        mockMvc = MockMvcBuilders.standaloneSetup(empresarioController)
+            .setControllerAdvice() 
+            .build();
     }
 
     @Test
-    public void testCreateEmpresarioSuccessTC013() throws Exception {
+    void testCreateEmpresarioSuccessTC013() throws Exception {
         when(empresarioRepository.save(any(Empresario.class))).thenReturn(empresario);
 
         mockMvc.perform(post("/empresarios")
@@ -67,7 +65,7 @@ public class EmpresarioControllerTest {
     }
 
     @Test
-    public void testCreateEmpresarioErrorDuplicateEmailTC014() throws Exception {
+    void testCreateEmpresarioErrorDuplicateEmailTC014() throws Exception {
         when(empresarioRepository.findByEmail(empresario.getEmail())).thenReturn(empresario);
 
         mockMvc.perform(post("/empresarios")
@@ -82,7 +80,7 @@ public class EmpresarioControllerTest {
     }
 
     @Test
-    public void testCreateEmpresarioErrorNullFieldNomeTC015() throws Exception {
+    void testCreateEmpresarioErrorNullFieldNomeTC015() throws Exception {
         Empresario invalidEmpresario = new Empresario(id, null, "joao@mail.com", "123456", "Empresa ABC");
         
         mockMvc.perform(post("/empresarios")
@@ -94,7 +92,7 @@ public class EmpresarioControllerTest {
     }
 
     @Test
-    public void testCreateEmpresarioErrorNullFieldEmailTC016() throws Exception {
+    void testCreateEmpresarioErrorNullFieldEmailTC016() throws Exception {
         Empresario invalidEmpresario = new Empresario(id, "João", null, "123456", "Empresa ABC");
         
         mockMvc.perform(post("/empresarios")
@@ -106,7 +104,7 @@ public class EmpresarioControllerTest {
     }
 
     @Test
-    public void testCreateEmpresarioErrorNullFieldPasswordTC017() throws Exception {
+    void testCreateEmpresarioErrorNullFieldPasswordTC017() throws Exception {
         Empresario invalidEmpresario = new Empresario(id, "João", "joao@mail.com", null, "Empresa ABC");
         
         mockMvc.perform(post("/empresarios")
@@ -118,7 +116,7 @@ public class EmpresarioControllerTest {
     }
 
     @Test
-    public void testCreateEmpresarioErrorNullFieldEmpresaTC019() throws Exception {
+    void testCreateEmpresarioErrorNullFieldEmpresaTC019() throws Exception {
         Empresario invalidEmpresario = new Empresario(id, "João", "joao@mail.com", "123456", null);
         
         mockMvc.perform(post("/empresarios")

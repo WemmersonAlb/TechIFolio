@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,11 +16,8 @@ import com.ifpe.techifolio.dto.ErrorResponse;
 @RestController
 @RequestMapping("/empresarios")
 public class EmpresarioController {
-    private final EmpresarioRepository repository;
-
-    public EmpresarioController(EmpresarioRepository repository) {
-        this.repository = repository;
-    }
+    @Autowired
+    private EmpresarioRepository repository;
 
     @PostMapping
     public ResponseEntity<Object> createEmpresario(@RequestBody Empresario empresario) {

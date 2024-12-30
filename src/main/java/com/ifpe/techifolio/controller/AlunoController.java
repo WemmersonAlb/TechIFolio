@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,16 +16,13 @@ import com.ifpe.techifolio.dto.ErrorResponse;
 @RestController
 @RequestMapping("/alunos")
 public class AlunoController {
-    private final AlunoRepository repository;
-
-    public AlunoController(AlunoRepository repository) {
-        this.repository = repository;
-    }
+    @Autowired
+    private AlunoRepository repository;
 
     @PostMapping
     public ResponseEntity<Object> createAluno(@RequestBody Aluno aluno) {
         String nullFieldMessage = aluno.getNullFieldMessageAluno();
-        if (nullFieldMessage != null) {
+        if (nullFieldMessage!=null) {
             ErrorResponse errorResponse = new ErrorResponse("Erro: " + nullFieldMessage, aluno);
             return ResponseEntity.badRequest().body(errorResponse);
         }
@@ -80,8 +78,8 @@ public class AlunoController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Aluno> login(@RequestParam String email, @RequestParam String senha) {
-        Aluno aluno = repository.findByEmailAndSenha(email, senha);
+    public ResponseEntity<Aluno> login(@RequestBody Aluno loginRequest) {
+        Aluno aluno = repository.findByEmailAndSenha(loginRequest.getEmail(), loginRequest.getSenha());
         if (aluno != null) {
             return ResponseEntity.ok(aluno);
         } else {
@@ -90,13 +88,13 @@ public class AlunoController {
     }
 
     @PostMapping("/recuperar-senha")//implementar api para enviar a nova senha por email
-    public ResponseEntity<Object> recuperarSenha(@RequestParam String email) {
-        if(email == null || email.isEmpty()){
+    public ResponseEntity<Object> recuperarSenha(@RequestBody Aluno recuperacaoSenhaRequest) {
+        if(recuperacaoSenhaRequest.getEmail() == null || recuperacaoSenhaRequest.getEmail().isEmpty()){
             return ResponseEntity.status(400).body(new ErrorResponse("Erro: Email não pode ser nulo ou vazio.", null));
         }
-        Aluno aluno = repository.findByEmail(email);
+        Aluno aluno = repository.findByEmail(recuperacaoSenhaRequest.getEmail());
         if (aluno == null) {
-            return ResponseEntity.status(404).body(new ErrorResponse("Erro: Aluno não encontrado com o email informado.", null));
+            return ResponseEntity.status(404).body(new ErrorResponse("Erro: Aluno não encontrado com o email informado.", recuperacaoSenhaRequest.getEmail()));
         }
         String novaSenha = PasswordGenerator.generateRandomPassword();
         aluno.setSenha(novaSenha);
