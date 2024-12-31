@@ -43,7 +43,7 @@ public class Professor extends Pessoa{
         if (this.getFaculdade() == null) {
             returnText += "Faculdade não pode ser nula. ";
         }
-        if (returnText.isEmpty()) {
+        if (!returnText.isEmpty()) {
             return returnText;
         }
         return null;

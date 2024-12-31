@@ -6,34 +6,28 @@ import static org.mockito.Mockito.when;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ifpe.techifolio.controller.ProfessorController;
-import com.ifpe.techifolio.entities.Empresario;
 import com.ifpe.techifolio.entities.Professor;
 import com.ifpe.techifolio.repository.ProfessorRepository;
 
 import org.springframework.http.MediaType;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Optional;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-
-@WebMvcTest(ProfessorController.class)
-public class ProfessorControllerTest {
+@ExtendWith(MockitoExtension.class)
+class ProfessorControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
@@ -52,10 +46,13 @@ public class ProfessorControllerTest {
         MockitoAnnotations.openMocks(this);
         id = new ObjectId();
         professor = new Professor(id, "João", "joao@mail.com", "123456", "ABC");
+        mockMvc = MockMvcBuilders.standaloneSetup(professorController)
+            .setControllerAdvice() 
+            .build();
     }
 
     @Test
-    public void testCreateProfessorSucessTC013() throws Exception {
+    void testCreateProfessorSucessTC013() throws Exception {
        //Define o comportamento do mock: quando o método save for chamado, retorne o objeto professor
         when(professorRepository.save(any(Professor.class))).thenReturn(professor);
 
@@ -70,7 +67,7 @@ public class ProfessorControllerTest {
     }
 
     @Test
-    public void testCreateProfessorErrorDuplicateEmailTC014() throws Exception {
+    void testCreateProfessorErrorDuplicateEmailTC014() throws Exception {
         //Define o comportamento do mock: quando o método findByEmail for chamado, retorne o objeto professor
         when(professorRepository.findByEmail("joao@mail.com")).thenReturn(professor);
 
@@ -86,71 +83,49 @@ public class ProfessorControllerTest {
     }
 
     @Test
-    public void testCreateProfessorErrorNullFieldNomeTC015() throws Exception {
+    void testCreateProfessorErrorNullFieldNomeTC015() throws Exception {
         Professor invalidProfessor = new Professor(id, null, "joao@mail.com","123456", "ABC");
 
-        //Define o comportamento do mock: quando o método getNullFieldMessageProfessor for chamado, retorne a string "Nome não pode ser nulo. "
-        when(invalidProfessor.getNullFieldMessageProfessor()).thenReturn("Nome não pode ser nulo. ");
-
-        mockMvc.perform(post("/professores")
+       mockMvc.perform(post("/professores")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(professor)))
+                .content(new ObjectMapper().writeValueAsString(invalidProfessor)))
                 .andExpect(status().isBadRequest()) // Verifica se o status da resposta é 400 Bad Request
                 .andExpect(jsonPath("$.message").value("Erro: Nome não pode ser nulo. ")) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.nome").value(professor.getNome())) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.email").value(professor.getEmail()))
-                .andExpect(jsonPath("$.receivedObject.senha").value(professor.getSenha()))
-                .andExpect(jsonPath("$.receivedObject.faculdade").value(professor.getFaculdade()));
+                .andExpect(jsonPath("$.receivedObject.nome").isEmpty()); // Verifica o conteúdo da resposta
+                
     }
     @Test
-    public void testCreateProfessorErrorNullFieldEmailTC016() throws Exception {
+    void testCreateProfessorErrorNullFieldEmailTC016() throws Exception {
         Professor invalidProfessor = new Professor(id, "João", null,"123456", "ABC");
-        //Define o comportamento do mock: quando o método getNullFieldMessageProfessor for chamado, retorne a string "Email não pode ser nulo. "
-        when(invalidProfessor.getNullFieldMessageProfessor()).thenReturn("Email não pode ser nulo. ");
-
+       
         mockMvc.perform(post("/professores")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(professor)))
+                .content(new ObjectMapper().writeValueAsString(invalidProfessor)))
                 .andExpect(status().isBadRequest()) // Verifica se o status da resposta é 400 Bad Request
                 .andExpect(jsonPath("$.message").value("Erro: Email não pode ser nulo. ")) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.nome").value(professor.getNome())) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.email").value(professor.getEmail()))
-                .andExpect(jsonPath("$.receivedObject.senha").value(professor.getSenha()))
-                .andExpect(jsonPath("$.receivedObject.faculdade").value(professor.getFaculdade()));
+                .andExpect(jsonPath("$.receivedObject.email").isEmpty()); // Verifica o conteúdo da resposta 
     }
     @Test
-    public void testCreateProfessorErrorNullFieldPasswordTC017() throws Exception {
+    void testCreateProfessorErrorNullFieldPasswordTC017() throws Exception {
        Professor invalidProfessor = new Professor(id, "João", "joao@mail.com",null, "ABC");
 
-        //Define o comportamento do mock: quando o método getNullFieldMessageProfessor for chamado, retorne a string "Senha não pode ser nula. "
-        when(invalidProfessor.getNullFieldMessageProfessor()).thenReturn("Senha não pode ser nula. ");
-
         mockMvc.perform(post("/professores")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(professor)))
+                .content(new ObjectMapper().writeValueAsString(invalidProfessor)))
                 .andExpect(status().isBadRequest()) // Verifica se o status da resposta é 400 Bad Request
                 .andExpect(jsonPath("$.message").value("Erro: Senha não pode ser nula. ")) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.nome").value(professor.getNome())) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.email").value(professor.getEmail()))
-                .andExpect(jsonPath("$.receivedObject.senha").value(professor.getSenha()))
-                .andExpect(jsonPath("$.receivedObject.faculdade").value(professor.getFaculdade()));
+                .andExpect(jsonPath("$.receivedObject.senha").isEmpty());
     }
     @Test
-    public void testCreateProfessorErrorNullFieldFaculdadeTC018() throws Exception {
+    void testCreateProfessorErrorNullFieldFaculdadeTC018() throws Exception {
        Professor invalidProfessor = new Professor(id, "João", "joao@mail.com","123456", null);
-
-        //Define o comportamento do mock: quando o método getNullFieldMessageProfessor for chamado, retorne a string "Faculdade não pode ser nula. "
-        when(invalidProfessor.getNullFieldMessageProfessor()).thenReturn("Faculdade não pode ser nula. ");
 
         mockMvc.perform(post("/professores")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(professor)))
+                .content(new ObjectMapper().writeValueAsString(invalidProfessor)))
                 .andExpect(status().isBadRequest()) // Verifica se o status da resposta é 400 Bad Request
                 .andExpect(jsonPath("$.message").value("Erro: Faculdade não pode ser nula. ")) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.nome").value(professor.getNome())) // Verifica o conteúdo da resposta
-                .andExpect(jsonPath("$.receivedObject.email").value(professor.getEmail()))
-                .andExpect(jsonPath("$.receivedObject.senha").value(professor.getSenha()))
-                .andExpect(jsonPath("$.receivedObject.faculdade").value(professor.getFaculdade()));
+                .andExpect(jsonPath("$.receivedObject.faculdade").isEmpty());
     }
     // @Test
     // public void testGetProfessorById() throws Exception {

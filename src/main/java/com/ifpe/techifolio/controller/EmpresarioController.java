@@ -78,8 +78,8 @@ public class EmpresarioController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Empresario> login(@RequestParam String email, @RequestParam String senha) {
-        Empresario empresario = repository.findByEmailAndSenha(email, senha);
+    public ResponseEntity<Empresario> login(@RequestBody Empresario loginRequest) {
+        Empresario empresario = repository.findByEmailAndSenha(loginRequest.getEmail(), loginRequest.getSenha());
         if (empresario != null) {
             return ResponseEntity.ok(empresario);
         } else {

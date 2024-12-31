@@ -47,7 +47,7 @@ public class Empresario extends Pessoa{
         if (this.getEmpresa() == null) {
             returnText += "Empresa não pode ser nula. ";
         }
-        if (returnText.isEmpty()) {
+        if (!returnText.isEmpty()) {
             return returnText;
         }
         return null;

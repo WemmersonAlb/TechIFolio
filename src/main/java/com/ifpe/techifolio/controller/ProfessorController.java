@@ -88,8 +88,8 @@ public class ProfessorController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Professor> login(@RequestParam String email, @RequestParam String senha) {
-        Professor professor = repository.findByEmailAndSenha(email, senha);
+    public ResponseEntity<Professor> login(@RequestBody Professor loginRequest) {
+        Professor professor = repository.findByEmailAndSenha(loginRequest.getEmail(), loginRequest.getSenha());
         if (professor != null) {
             return ResponseEntity.ok(professor);
         } else {
